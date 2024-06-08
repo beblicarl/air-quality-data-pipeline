@@ -1,0 +1,58 @@
+version: "3.7"
+services:
+  postgres:
+    image: postgres:13
+    container_name: postgres
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: password
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5433:5432"
+
+  database:
+    build:
+      context: ../database
+    container_name: database
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: password
+    depends_on:
+      - postgres
+    ports:
+      - "5434:5432"
+
+  airflow:
+    build:
+      context: ..
+      dockerfile: airflow/Dockerfile
+    container_name: airflow
+    environment:
+      AIRFLOW__CORE__SQL_ALCHEMY_CONN: postgresql+psycopg2://postgres:password@database:5432/airquality_db
+      AIRFLOW__CORE__EXECUTOR: LocalExecutor
+    volumes:
+      - ./dags:/opt/airflow/dags
+    ports:
+      - "8080:8080"
+    depends_on:
+      - database
+    command: >
+      bash -c "
+      airflow db init &&
+      airflow users create --username carl --firstname Carl --lastname Bebli --role Admin --email carl@example.com --password carl123 &&
+      airflow webserver &
+      airflow scheduler
+      "
+
+  data_fetcher:
+    build:
+      context: ../data_fetch
+    container_name: data_fetcher
+    environment:
+      AIRQUALITY_API_KEY: "8d8983fa72msh4798bfc23f1e1d4p1b0e86jsn06202f95c19e"
+    depends_on:
+      - database
+
+volumes:
+  postgres_data:
