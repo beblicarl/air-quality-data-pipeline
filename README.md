@@ -4,8 +4,6 @@
 
 ![Pie chart](pie_chart.png)
 
-![Histogram](histogram.png)
-
 ![Bar chart](seaborn_visualization.png)
 
 ## Project Overview
